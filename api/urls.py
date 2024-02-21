@@ -26,6 +26,14 @@ def create_address(address: AddressCreate, db: Session = Depends(get_db)):
     return crud.create_address(db, address)
 
 
+@router.get("/address/get-all-address/")
+def get_all_address(db: Session = Depends(get_db)):
+    """
+    Retrieve all addresses in the DB.
+    """
+    return crud.get_all_addressess(db)
+
+
 @router.put("/address/update/{address_id}", response_model=AddressInDB)
 def update_address(address_id: int, address: AddressUpdate, db: Session = Depends(get_db)):
     """
