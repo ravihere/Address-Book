@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Integer, Float, String
 from database import Base
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,8 @@ class AddressBase(BaseModel):
     """
     Base model for Address.
     """
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
     name: str
 
 
@@ -57,4 +57,3 @@ class AddressInDB(AddressBase):
 
     class Config:
         from_attributes = True
-
