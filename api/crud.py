@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from database.models import Address
 from database.models import AddressCreate, AddressInDB, AddressUpdate
-from math import radians, sin, cos, sqrt, atan2
+from geopy.distance import geodesic
 
 logger = logging.getLogger(__name__)
 
@@ -65,46 +65,25 @@ def delete_address(db: Session, address_id: int):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+def get_all_addressess(db: Session) -> list:
+    address_data = db.query(Address).all()
+    return address_data
+
+
 def retrieve_addresses_within_distance(db: Session, latitude: float, longitude: float, distance: float):
-    """
-       Retrieve addresses within a given distance from latitude and longitude.
-
-       Args:
-           db (Session): Database session.
-           latitude (float): Latitude coordinate.
-           longitude (float): Longitude coordinate.
-           distance (float): Distance threshold in kilometers.
-
-       Returns:
-           list[Address]: List of Address objects within the specified distance.
-
-       Raises:
-           HTTPException: If an internal server error occurs.
-    """
     try:
         addresses_within_distance = []
 
         # Retrieve all addresses from the database
         all_addresses = db.query(Address).all()
 
-        # Convert distance from kilometers to degrees (approximate)
-        # This is a rough approximation and can vary significantly depending on the latitude
-        distance_in_degrees = distance / 111.0  # Approximately 111 kilometers per degree
+        # Define the reference point
+        reference_point = (latitude, longitude)
 
-        # Convert latitude and longitude from degrees to radians
-        lat1, lon1 = radians(latitude), radians(longitude)
-
-        # Iterate over each address and calculate its distance from the reference latitude and longitude
+        # Iterate over each address and calculate its distance from the reference point
         for address in all_addresses:
-            address_latitude = radians(address.latitude)
-            address_longitude = radians(address.longitude)
-
-            # Haversine formula
-            dlon = address_longitude - lon1
-            dlat = address_latitude - lat1
-            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(address_latitude) * sin(dlon / 2) ** 2
-            c = 2 * atan2(sqrt(a), sqrt(1 - a))
-            distance_between_points = 6371 * c  # Radius of the Earth in kilometers
+            address_point = (address.latitude, address.longitude)
+            distance_between_points = geodesic(reference_point, address_point).kilometers
 
             # Check if the distance between points is within the given distance
             if distance_between_points <= distance:
